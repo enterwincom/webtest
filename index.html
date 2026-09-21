@@ -18,6 +18,20 @@
             min-height: 100vh;
             box-sizing: border-box;
             transition: background-color 0.3s ease, color 0.3s ease;
+
+            /* CSS를 통한 텍스트 드래그 및 선택 금지 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* 입력창에서는 텍스트 드래그 및 선택 허용 */
+        input, textarea {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
         }
 
         *, *::before, *::after {
@@ -45,13 +59,13 @@
             }
         }
 
-        /* 공통 카드 스타일 - 부담스럽지 않으면서 구분선 역할을 하는 테두리 */
+        /* 공통 카드 스타일 */
         .card {
             background: #ffffff; 
             padding: 28px;
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            border: 1.5px solid rgba(31, 41, 55, 0.2); /* 은은하지만 확실한 경계선 */
+            border: 1.5px solid rgba(31, 41, 55, 0.2);
             transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -312,7 +326,7 @@
             </div>
         </div>
 
-        <!-- 기능 2: 색상 테마 조작 (상태 기억 연동) -->
+        <!-- 기능 2: 색상 테마 조작 -->
         <div class="card">
             <h2>🎨 배경 테마 제어 (DOM 조작)</h2>
             <p class="card-desc">버튼을 눌러 실시간 배경 테마를 바꾸고 상태를 브라우저에 저장합니다.</p>
@@ -324,7 +338,7 @@
             </div>
         </div>
 
-        <!-- 기능 3: 고도화된 To-Do 리스트 (완료선 체크 추가) -->
+        <!-- 기능 3: 고도화된 To-Do 리스트 -->
         <div class="card">
             <h2>📝 로컬 스토리지 Todo</h2>
             <p class="card-desc">체크박스로 완료 표시를 할 수 있고 상태가 완벽히 보존됩니다.</p>
@@ -348,6 +362,58 @@
     </div>
 
     <script>
+        // --- 🔒 보안 기능 (우클릭, 드래그/선택 금지, 단축키 차단) ---
+        
+        // 1. 우클릭 방지
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+
+        // 2. 드래그 및 선택 금지 (input 영역 제외)
+        document.addEventListener('selectstart', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('dragstart', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        });
+
+        // 3. 소스보기 및 개발자 도구 단축키 차단
+        document.addEventListener('keydown', function(e) {
+            const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+            
+            // F12 (개발자 도구)
+            if (e.key === 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Ctrl/Cmd + Shift + I (개발자 도구)
+            // Ctrl/Cmd + Shift + J (콘솔)
+            // Ctrl/Cmd + Shift + C (요소 검사)
+            if (isCmdOrCtrl && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Ctrl/Cmd + U (소스 보기)
+            if (isCmdOrCtrl && (e.key === 'u' || e.key === 'U')) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Ctrl/Cmd + S (페이지 저장)
+            if (isCmdOrCtrl && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+
         // --- 1. 카운터 스크립트 ---
         let count = 0;
         function changeCounter(val) {
@@ -356,9 +422,9 @@
             document.getElementById('counter-value').innerText = count;
         }
 
+
         // --- 2. 배경 테마 스크립트 ---
         const themes = {
-            // 부담스럽지 않은 자연스러운 컬러 경계선으로 수정
             default: { bodyBg: '#f3f4f6', cardBg: '#ffffff', text: '#1f2937', border: 'rgba(31, 41, 55, 0.2)', inputBg: '#ffffff', itemBg: 'rgba(0,0,0,0.02)' },
             dark: { bodyBg: '#0f172a', cardBg: '#1e293b', text: '#f8fafc', border: 'rgba(241, 245, 249, 0.2)', inputBg: '#334155', itemBg: '#334155' },
             green: { bodyBg: '#f0fdf4', cardBg: '#dcfce7', text: '#14532d', border: 'rgba(22, 101, 52, 0.3)', inputBg: '#ffffff', itemBg: 'rgba(22, 101, 52, 0.05)' },
@@ -392,7 +458,6 @@
             const counterVal = document.getElementById('counter-value');
             if (counterVal) counterVal.style.borderColor = t.border;
 
-            // 서브 텍스트 가독성 최적화
             const descs = document.querySelectorAll('.card-desc');
             descs.forEach(desc => {
                 desc.style.color = themeName === 'dark' ? '#94a3b8' : '#6b7280';
@@ -405,6 +470,7 @@
 
             localStorage.setItem('saved_theme', themeName);
         }
+
 
         // --- 3. 로컬 스토리지 Todo 스크립트 ---
         let todos = JSON.parse(localStorage.getItem('my_pro_todos')) || [];
@@ -467,6 +533,7 @@
             if (e.key === 'Enter') addTodo();
         });
 
+
         // --- 4. API Fetch 테스트 스크립트 ---
         async function fetchApiData() {
             const container = document.getElementById('api-container');
@@ -495,6 +562,7 @@
             }
         }
 
+        // 초기화 실행
         window.onload = function() {
             const savedTheme = localStorage.getItem('saved_theme') || 'default';
             selectTheme(savedTheme);
