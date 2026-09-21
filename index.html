@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>종합 웹 기능 테스트 Playground</title>
     <style>
-        /* 기본 설정 */
+        /* 기본 설정 및 전체 선택 금지 */
+        html, body {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f3f4f6;
@@ -18,15 +26,9 @@
             min-height: 100vh;
             box-sizing: border-box;
             transition: background-color 0.3s ease, color 0.3s ease;
-
-            /* CSS를 통한 텍스트 드래그 및 선택 금지 */
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
         }
 
-        /* 입력창에서는 텍스트 드래그 및 선택 허용 */
+        /* 입력창 영역은 텍스트 드래그 및 선택 허용 */
         input, textarea {
             -webkit-user-select: text !important;
             -moz-user-select: text !important;
@@ -186,7 +188,7 @@
             font-size: 13px;
         }
 
-        /* 3. 고도화된 To-Do 리스트 */
+        /* 3. To-Do 리스트 */
         .todo-input-group {
             display: flex;
             gap: 8px;
@@ -305,13 +307,13 @@
         }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;" onselectstart="return false;" ondragstart="return false;">
 
     <div class="playground">
         <!-- 메인 헤더 -->
         <div class="card full-width" style="text-align: center;">
             <h1>🛠️ Web Dev Playground</h1>
-            <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">기능 완성도를 높인 실무형 웹 기능 테스트 페이지입니다.</p>
+            <p style="color: #6b7280; margin: 8px 0 0 0; font-size: 14px; font-weight: 500;">보안 및 기능 완성도를 높인 웹 기능 테스트 페이지입니다.</p>
         </div>
 
         <!-- 기능 1: 숫자 카운터 -->
@@ -362,58 +364,106 @@
     </div>
 
     <script>
-        // --- 🔒 보안 기능 (우클릭, 드래그/선택 금지, 단축키 차단) ---
-        
-        // 1. 우클릭 방지
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
+        // ==========================================
+        // 🔒 강력한 보안 및 차단 로직 (iFrame / 샌드박스 대응)
+        // ==========================================
 
-        // 2. 드래그 및 선택 금지 (input 영역 제외)
-        document.addEventListener('selectstart', function(e) {
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('dragstart', function(e) {
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-            }
-        });
-
-        // 3. 소스보기 및 개발자 도구 단축키 차단
-        document.addEventListener('keydown', function(e) {
-            const isCmdOrCtrl = e.ctrlKey || e.metaKey;
-            
-            // F12 (개발자 도구)
-            if (e.key === 'F12') {
+        (function applySecurityShield() {
+            // 1. 우클릭 강제 차단 (이벤트 캡처링 사용)
+            const blockContextMenu = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-            }
-            
-            // Ctrl/Cmd + Shift + I (개발자 도구)
-            // Ctrl/Cmd + Shift + J (콘솔)
-            // Ctrl/Cmd + Shift + C (요소 검사)
-            if (isCmdOrCtrl && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+                return false;
+            };
 
-            // Ctrl/Cmd + U (소스 보기)
-            if (isCmdOrCtrl && (e.key === 'u' || e.key === 'U')) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+            window.addEventListener('contextmenu', blockContextMenu, true);
+            document.addEventListener('contextmenu', blockContextMenu, true);
 
-            // Ctrl/Cmd + S (페이지 저장)
-            if (isCmdOrCtrl && (e.key === 's' || e.key === 'S')) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
+            // 2. 텍스트 드래그 및 선택 차단 (Input/Textarea 제외)
+            const blockSelect = function(e) {
+                const targetName = e.target.tagName ? e.target.tagName.toUpperCase() : '';
+                if (targetName !== 'INPUT' && targetName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            };
 
+            window.addEventListener('selectstart', blockSelect, true);
+            document.addEventListener('selectstart', blockSelect, true);
+            window.addEventListener('dragstart', blockSelect, true);
+            document.addEventListener('dragstart', blockSelect, true);
 
+            // 3. 소스 보기 및 개발자 도구 단축키 완벽 차단
+            const blockShortcuts = function(e) {
+                const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+                const keyCode = e.keyCode || e.which;
+                const key = e.key ? e.key.toLowerCase() : '';
+
+                // F12 차단
+                if (keyCode === 123 || key === 'f12') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl/Cmd + Shift + I/J/C (개발자 도구 및 요소 검사)
+                if (isCmdOrCtrl && e.shiftKey && (key === 'i' || key === 'j' || key === 'c' || keyCode === 73 || keyCode === 74 || keyCode === 67)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl/Cmd + U (소스 보기)
+                if (isCmdOrCtrl && (key === 'u' || keyCode === 85)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl/Cmd + S (페이지 저장)
+                if (isCmdOrCtrl && (key === 's' || keyCode === 83)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl/Cmd + P (인쇄)
+                if (isCmdOrCtrl && (key === 'p' || keyCode === 80)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            };
+
+            window.addEventListener('keydown', blockShortcuts, true);
+            document.addEventListener('keydown', blockShortcuts, true);
+
+            // 4. 개발자 도구 디버거 디터런트 (DevTools 오픈 시 무한 디버거 실행)
+            setInterval(function() {
+                const startTime = performance.now();
+                (function() {}.constructor('debugger')());
+                const endTime = performance.now();
+                // DevTools가 켜져 있어 디버거가 걸릴 경우 실행 간격을 감지
+                if (endTime - startTime > 100) {
+                    console.clear();
+                }
+            }, 500);
+
+            // 5. 콘솔 접근 제어 (Console 로그 재정의)
+            try {
+                if (window.console) {
+                    const noop = function() {};
+                    window.console.log = noop;
+                    window.console.dir = noop;
+                    window.console.warn = noop;
+                    window.console.error = noop;
+                }
+            } catch (err) {}
+        })();
+    </script>
+
+    <script>
         // --- 1. 카운터 스크립트 ---
         let count = 0;
         function changeCounter(val) {
@@ -421,7 +471,6 @@
             else count += val;
             document.getElementById('counter-value').innerText = count;
         }
-
 
         // --- 2. 배경 테마 스크립트 ---
         const themes = {
@@ -470,7 +519,6 @@
 
             localStorage.setItem('saved_theme', themeName);
         }
-
 
         // --- 3. 로컬 스토리지 Todo 스크립트 ---
         let todos = JSON.parse(localStorage.getItem('my_pro_todos')) || [];
@@ -532,7 +580,6 @@
         document.getElementById('todo-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') addTodo();
         });
-
 
         // --- 4. API Fetch 테스트 스크립트 ---
         async function fetchApiData() {
